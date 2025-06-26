@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, X, Download } from "lucide-react";
-
 const overlays = ["/overlays/negrito1.png", "/overlays/curuchano.png"];
 
 const getRandomOverlays = (count: number) => {
@@ -9,51 +8,61 @@ const getRandomOverlays = (count: number) => {
 };
 
 const CameraFilter: React.FC = () => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [randomOverlays, setRandomOverlays] = useState<string[]>([]);
-
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const requestCameraPermission = async () => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = async () => {
-          await videoRef.current?.play();
-        };
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setRandomOverlays(getRandomOverlays(2));
+        setHasPermission(true);
+      } catch (err) {
+        console.error("No se pudo acceder a la cámara:", err);
+        setHasPermission(false);
       }
-      setRandomOverlays(getRandomOverlays(2));
-      setHasPermission(true);
-    } catch (err) {
-      console.error(err);
-      setError("No se pudo acceder a la cámara.");
-      setHasPermission(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    startCamera();
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+  const drawFestiveElements = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ) => {
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 40px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("¡Feliz Aniversario FIIS 2025!", width / 2, 60);
+
+    const emojis = ["🎉", "🎊", "🎈", "⭐", "✨"];
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      ctx.font = `${Math.floor(Math.random() * 20 + 20)}px Arial`;
+      ctx.fillText(emojis[Math.floor(Math.random() * emojis.length)], x, y);
     }
-    setHasPermission(null);
   };
 
   const takePhoto = () => {
@@ -93,10 +102,7 @@ const CameraFilter: React.FC = () => {
             150
           ),
         ]).then(() => {
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 40px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText("¡Feliz Aniversario FIIS 2025!", canvas.width / 2, 60);
+          drawFestiveElements(ctx, canvas.width, canvas.height);
 
           const link = document.createElement("a");
           link.download = `FIIS_35_ANIVERSARIO_${Date.now()}.png`;
@@ -106,10 +112,6 @@ const CameraFilter: React.FC = () => {
       }
     }
   };
-
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 p-4">
@@ -144,19 +146,11 @@ const CameraFilter: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white/90 text-center rounded-xl shadow p-6 text-blue-900">
-            <Camera className="w-8 h-8 mx-auto mb-3" />
-            <p className="mb-2 font-semibold">
-              Necesitamos tu permiso para usar la cámara
+          <div className="text-white text-center py-10">
+            <Camera className="w-10 h-10 mx-auto mb-4 animate-pulse" />
+            <p className="text-lg font-semibold animate-bounce">
+              Cargando cámara...
             </p>
-            <button
-              onClick={requestCameraPermission}
-              disabled={isLoading}
-              className="bg-amber-500 text-white px-6 py-3 rounded-full font-bold hover:bg-amber-600 disabled:opacity-60"
-            >
-              {isLoading ? "Cargando..." : "Activar Cámara"}
-            </button>
-            {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
           </div>
         )}
 
@@ -170,10 +164,10 @@ const CameraFilter: React.FC = () => {
             </button>
 
             <button
-              onClick={stopCamera}
+              onClick={() => window.location.reload()}
               className="bg-red-500 px-6 py-3 rounded shadow hover:bg-red-600 flex items-center gap-2 text-white"
             >
-              <X className="w-5 h-5" /> Cerrar
+              <X className="w-5 h-5" /> Reiniciar
             </button>
           </div>
         )}
