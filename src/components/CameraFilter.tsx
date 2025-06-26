@@ -137,7 +137,8 @@ const CameraFilter: React.FC = () => {
             🎉 ¡Feliz Aniversario FIIS 2025!
           </h1>
           <p className="text-blue-200 text-sm">
-            Universidad Nacional Hermilio Valdizán – Ingeniería de Sistemas
+            Universidad Nacional Hermilio Valdizán – Ingeniería de Sistemas e
+            Industrial
           </p>
         </div>
 
