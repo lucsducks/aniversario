@@ -154,6 +154,7 @@ const CameraFilter: React.FC = () => {
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
+              crossOrigin="anonymous"
               autoPlay
               playsInline
               muted
@@ -162,6 +163,7 @@ const CameraFilter: React.FC = () => {
               <img
                 key={index}
                 src={overlay}
+                crossOrigin="anonymous"
                 alt={`overlay-${index}`}
                 className={`absolute w-[100px] h-[150px] object-contain pointer-events-none top-1/2 -translate-y-1/2 ${
                   index === 0 ? "left-2" : "right-2"
