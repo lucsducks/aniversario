@@ -34,6 +34,9 @@ const CameraFilter: React.FC = () => {
         }
         setRandomOverlays(getRandomOverlays(2));
         setHasPermission(true);
+        videoRef.current.setAttribute("autoplay", "true");
+        videoRef.current.setAttribute("muted", "true");
+        videoRef.current.setAttribute("playsinline", "true");
       } catch (err) {
         console.error("No se pudo acceder a la cámara:", err);
         setHasPermission(false);
