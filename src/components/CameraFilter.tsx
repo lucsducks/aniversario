@@ -1,14 +1,7 @@
-// CameraFilter.tsx – Filtro cultural UNHEVAL con sobreposición de Negritos tipo demo visual
-
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, X, Download } from "lucide-react";
 
-const overlays = [
-  "/overlays/negrito1.jpg",
-  "/overlays/negrito2.jpg",
-  "/overlays/curuchano1.jpg",
-  "/overlays/curuchano2.jpg",
-];
+const overlays = ["/overlays/negrito1.png", "/overlays/curuchano.png"];
 
 const getRandomOverlays = (count: number) => {
   const shuffled = [...overlays].sort(() => 0.5 - Math.random());
@@ -31,24 +24,24 @@ const CameraFilter: React.FC = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
+          facingMode: "user",
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: "user",
         },
         audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        videoRef.current.onloadedmetadata = async () => {
+          await videoRef.current?.play();
+        };
       }
       setRandomOverlays(getRandomOverlays(2));
       setHasPermission(true);
     } catch (err) {
       console.error(err);
-      setError(
-        "No se pudo acceder a la cámara. Por favor, revisa los permisos del navegador."
-      );
+      setError("No se pudo acceder a la cámara.");
       setHasPermission(false);
     } finally {
       setIsLoading(false);
@@ -90,12 +83,16 @@ const CameraFilter: React.FC = () => {
           });
         };
 
-        const drawOverlays = Promise.all([
-          loadOverlay(randomOverlays[0], 30, 100, 200, 300),
-          loadOverlay(randomOverlays[1], canvas.width - 230, 100, 200, 300),
-        ]);
-
-        drawOverlays.then(() => {
+        Promise.all([
+          loadOverlay(randomOverlays[0], 20, canvas.height * 0.35, 100, 150),
+          loadOverlay(
+            randomOverlays[1],
+            canvas.width - 120,
+            canvas.height * 0.35,
+            100,
+            150
+          ),
+        ]).then(() => {
           ctx.fillStyle = "#fff";
           ctx.font = "bold 40px Arial";
           ctx.textAlign = "center";
@@ -116,73 +113,68 @@ const CameraFilter: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 p-4">
-      <div className="w-full max-w-6xl mx-auto">
+      <div className="w-full max-w-md mx-auto">
         <div className="text-center text-white mb-4">
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-2xl font-bold">
             🎉 ¡Feliz Aniversario FIIS 2025!
           </h1>
-          <p className="text-blue-200">
-            Universidad Nacional Hermilio Valdizán – Escuela Profesional de
-            Ingeniería de Sistemas
+          <p className="text-blue-200 text-sm">
+            Universidad Nacional Hermilio Valdizán – Ingeniería de Sistemas
           </p>
         </div>
 
         {hasPermission ? (
-          <>
-            <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden mb-6">
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                autoPlay
-                playsInline
-                muted
+          <div className="relative w-full h-[75vh] bg-black rounded-xl overflow-hidden mb-4">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+            {randomOverlays.map((overlay, index) => (
+              <img
+                key={index}
+                src={overlay}
+                alt={`overlay-${index}`}
+                className={`absolute w-[100px] h-[150px] object-contain pointer-events-none top-1/2 -translate-y-1/2 ${
+                  index === 0 ? "left-2" : "right-2"
+                }`}
               />
-
-              {randomOverlays.map((overlay, index) => (
-                <img
-                  key={index}
-                  src={overlay}
-                  alt={`overlay-${index}`}
-                  className={`absolute top-[100px] w-[200px] h-[300px] object-contain pointer-events-none ${
-                    index === 0 ? "left-[30px]" : "right-[30px]"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={takePhoto}
-                className="bg-amber-500 px-6 py-3 rounded shadow hover:bg-amber-600 flex items-center gap-2 text-white"
-              >
-                <Download className="w-5 h-5" />
-                Capturar Foto
-              </button>
-
-              <button
-                onClick={stopCamera}
-                className="bg-red-500 px-6 py-3 rounded shadow hover:bg-red-600 flex items-center gap-2 text-white"
-              >
-                <X className="w-5 h-5" />
-                Cerrar
-              </button>
-            </div>
-          </>
+            ))}
+          </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center bg-white/90 text-black p-6 rounded-xl shadow-xl">
-            <Camera className="w-10 h-10 text-blue-900 mb-4" />
-            <p className="mb-4">
-              Para usar los filtros culturales, necesitamos permiso para acceder
-              a tu cámara.
+          <div className="bg-white/90 text-center rounded-xl shadow p-6 text-blue-900">
+            <Camera className="w-8 h-8 mx-auto mb-3" />
+            <p className="mb-2 font-semibold">
+              Necesitamos tu permiso para usar la cámara
             </p>
             <button
               onClick={requestCameraPermission}
-              className="bg-amber-500 px-6 py-3 rounded shadow hover:bg-amber-600 text-white"
               disabled={isLoading}
+              className="bg-amber-500 text-white px-6 py-3 rounded-full font-bold hover:bg-amber-600 disabled:opacity-60"
             >
-              {isLoading ? "Activando cámara..." : "Activar Cámara"}
+              {isLoading ? "Cargando..." : "Activar Cámara"}
             </button>
-            {error && <p className="text-red-600 mt-4">{error}</p>}
+            {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
+          </div>
+        )}
+
+        {hasPermission && (
+          <div className="flex justify-center gap-4 mt-4">
+            <button
+              onClick={takePhoto}
+              className="bg-amber-500 px-6 py-3 rounded shadow hover:bg-amber-600 flex items-center gap-2 text-white"
+            >
+              <Download className="w-5 h-5" /> Capturar Foto
+            </button>
+
+            <button
+              onClick={stopCamera}
+              className="bg-red-500 px-6 py-3 rounded shadow hover:bg-red-600 flex items-center gap-2 text-white"
+            >
+              <X className="w-5 h-5" /> Cerrar
+            </button>
           </div>
         )}
       </div>
