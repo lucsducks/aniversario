@@ -1,5 +1,10 @@
+// CameraFilter.tsx – Filtro cultural UNHEVAL con sobreposición de Negritos y decoraciones festivas en la imagen
+
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, X, Download } from "lucide-react";
+
 const overlays = ["/overlays/negrito1.png", "/overlays/curuchano.png"];
 
 const getRandomOverlays = (count: number) => {
@@ -10,6 +15,7 @@ const getRandomOverlays = (count: number) => {
 const CameraFilter: React.FC = () => {
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [randomOverlays, setRandomOverlays] = useState<string[]>([]);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -18,11 +24,7 @@ const CameraFilter: React.FC = () => {
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
+          video: { facingMode: "user" },
           audio: false,
         });
         streamRef.current = stream;
@@ -71,9 +73,21 @@ const CameraFilter: React.FC = () => {
       const video = videoRef.current;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
+        const { videoWidth, videoHeight } = video;
+
+        const isPortrait = window.innerHeight > window.innerWidth;
+        canvas.width = isPortrait ? videoHeight : videoWidth;
+        canvas.height = isPortrait ? videoWidth : videoHeight;
+
+        if (isPortrait) {
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate((-90 * Math.PI) / 180);
+          ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+          ctx.restore();
+        } else {
+          ctx.drawImage(video, 0, 0);
+        }
 
         const loadOverlay = (
           src: string,
@@ -103,14 +117,16 @@ const CameraFilter: React.FC = () => {
           ),
         ]).then(() => {
           drawFestiveElements(ctx, canvas.width, canvas.height);
-
-          const link = document.createElement("a");
-          link.download = `FIIS_35_ANIVERSARIO_${Date.now()}.png`;
-          link.href = canvas.toDataURL();
-          link.click();
+          const photoData = canvas.toDataURL();
+          setCapturedPhoto(photoData);
         });
       }
     }
+  };
+
+  const reset = () => {
+    setCapturedPhoto(null);
+    setRandomOverlays(getRandomOverlays(2));
   };
 
   return (
@@ -125,7 +141,15 @@ const CameraFilter: React.FC = () => {
           </p>
         </div>
 
-        {hasPermission ? (
+        {capturedPhoto ? (
+          <div className="w-full bg-black rounded-xl overflow-hidden mb-4">
+            <img
+              src={capturedPhoto}
+              alt="capturada"
+              className="w-full object-contain"
+            />
+          </div>
+        ) : hasPermission ? (
           <div className="relative w-full h-[75vh] bg-black rounded-xl overflow-hidden mb-4">
             <video
               ref={videoRef}
@@ -154,23 +178,32 @@ const CameraFilter: React.FC = () => {
           </div>
         )}
 
-        {hasPermission && (
-          <div className="flex justify-center gap-4 mt-4">
+        <div className="flex justify-center gap-4 mt-4">
+          {!capturedPhoto ? (
             <button
               onClick={takePhoto}
               className="bg-amber-500 px-6 py-3 rounded shadow hover:bg-amber-600 flex items-center gap-2 text-white"
             >
               <Download className="w-5 h-5" /> Capturar Foto
             </button>
-
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-red-500 px-6 py-3 rounded shadow hover:bg-red-600 flex items-center gap-2 text-white"
-            >
-              <X className="w-5 h-5" /> Reiniciar
-            </button>
-          </div>
-        )}
+          ) : (
+            <>
+              <a
+                href={capturedPhoto}
+                download={`FIIS_35_ANIVERSARIO_${Date.now()}.png`}
+                className="bg-green-600 px-6 py-3 rounded shadow hover:bg-green-700 flex items-center gap-2 text-white"
+              >
+                <Download className="w-5 h-5" /> Descargar
+              </a>
+              <button
+                onClick={reset}
+                className="bg-red-500 px-6 py-3 rounded shadow hover:bg-red-600 flex items-center gap-2 text-white"
+              >
+                <X className="w-5 h-5" /> Nueva Foto
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
