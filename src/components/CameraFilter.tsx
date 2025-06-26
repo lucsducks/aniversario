@@ -30,13 +30,13 @@ const CameraFilter: React.FC = () => {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute("autoplay", "true");
+          videoRef.current.setAttribute("muted", "true");
+          videoRef.current.setAttribute("playsinline", "true");
           await videoRef.current.play();
         }
         setRandomOverlays(getRandomOverlays(2));
         setHasPermission(true);
-        videoRef.current.setAttribute("autoplay", "true");
-        videoRef.current.setAttribute("muted", "true");
-        videoRef.current.setAttribute("playsinline", "true");
       } catch (err) {
         console.error("No se pudo acceder a la cámara:", err);
         setHasPermission(false);
