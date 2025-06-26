@@ -21,7 +21,9 @@ const CameraFilter: React.FC = () => {
   const checkHttps = () => {
     return (
       window.location.protocol === "https:" ||
-      window.location.hostname === "localhost"
+      window.location.hostname === "localhost" ||
+      window.location.hostname.includes("vercel.app") ||
+      window.location.hostname.includes("netlify.app")
     );
   };
 
@@ -54,13 +56,12 @@ const CameraFilter: React.FC = () => {
       // Detener cualquier stream existente
       stopCamera();
 
-      // Configuraciones más específicas para mejor compatibilidad
+      // Configuraciones más básicas pero compatibles
       const constraints = {
         video: {
           facingMode: "user",
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 60 },
+          width: { min: 320, ideal: 640, max: 1280 },
+          height: { min: 240, ideal: 480, max: 720 },
         },
         audio: false,
       };
@@ -121,8 +122,13 @@ const CameraFilter: React.FC = () => {
   };
 
   useEffect(() => {
-    startCamera();
+    // Pequeño delay para asegurar que el DOM esté completamente cargado
+    const timer = setTimeout(() => {
+      startCamera();
+    }, 100);
+
     return () => {
+      clearTimeout(timer);
       stopCamera();
     };
   }, []);
